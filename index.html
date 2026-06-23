@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rekey — fix your text instantly</title>
+<meta name="description" content="Wrong keyboard, caps lock, or need Ukrainian transliteration? Fix any text in one click.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0D0D0F;
+  --surface:#16161A;
+  --surface2:#1E1E24;
+  --border:#2A2A32;
+  --border2:#38383F;
+  --text:#F0EFF8;
+  --text2:#9090A0;
+  --text3:#5A5A6A;
+  --accent:#6C5CE7;
+  --accent-glow:rgba(108,92,231,0.18);
+  --accent-light:#8B7CF0;
+  --green:#00C896;
+  --green-dim:rgba(0,200,150,0.12);
+  --mono:'DM Mono',monospace;
+}
+
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── Header ── */
+header{
+  height:60px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:20;
+  background:rgba(13,13,15,0.85);
+  backdrop-filter:blur(12px);
+}
+header .inner{max-width:760px;margin:0 auto;width:100%;height:100%;padding:0 48px;display:flex;align-items:center;justify-content:space-between;}
+.wordmark{font-size:18px;font-weight:600;letter-spacing:-0.03em;color:var(--text)}
+.wordmark span{color:var(--accent-light)}
+.hkbd{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px}
+kbd{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:8px;padding:2px 7px;
+  font-size:11px;font-family:var(--mono);color:var(--text2);
+}
+
+/* ── Main ── */
+main{flex:1;max-width:760px;margin:0 auto;width:100%;padding:48px 48px 80px}
+
+/* ── Hero ── */
+.hero{margin-bottom:40px}
+.hero h1{
+  font-size:38px;font-weight:600;letter-spacing:-0.03em;line-height:1.15;
+  margin-bottom:12px;
+}
+.hero h1 em{font-style:normal;color:var(--accent-light)}
+.hero p{font-size:15px;color:var(--text2);line-height:1.65;max-width:480px}
+
+/* ── Mode tabs ── */
+.mode-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px;margin-bottom:16px}
+.mode-tab{
+  flex:1;padding:10px 8px;border:none;border-radius:16px;
+  background:transparent;color:var(--text2);
+  font-size:13px;font-weight:500;font-family:inherit;
+  cursor:pointer;transition:all 0.15s;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.mode-tab:hover{color:var(--text)}
+.mode-tab.active{background:var(--accent);color:#fff}
+.mode-tab .ti{font-size:17px}
+
+/* ── Desc strip ── */
+.desc-strip{
+  font-size:13px;color:var(--text2);
+  padding:10px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:0 16px 16px 0;
+  margin-bottom:16px;
+  line-height:1.5;
+}
+
+/* ── Pair pills ── */
+.pairs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.pair{
+  padding:6px 14px;
+  border:1px solid var(--border);
+  border-radius:99px;
+  background:transparent;
+  color:var(--text2);
+  font-size:13px;font-weight:500;font-family:inherit;
+  cursor:pointer;transition:all 0.15s;
+}
+.pair:hover{border-color:var(--border2);color:var(--text)}
+.pair.active{
+  border-color:var(--green);
+  background:var(--green-dim);
+  color:var(--green);
+}
+
+/* ── Editor ── */
+.editor{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:0;
+  align-items:stretch;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  overflow:hidden;
+  margin-bottom:16px;
+  min-height:200px;
+}
+.editor-pane{display:flex;flex-direction:column}
+.editor-pane-label{
+  font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--text3);padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+}
+textarea{
+  flex:1;width:100%;
+  padding:16px;
+  background:transparent;
+  border:none;outline:none;
+  font-size:15px;font-family:var(--mono);
+  color:var(--text);line-height:1.65;
+  resize:none;min-height:160px;
+}
+textarea::placeholder{color:var(--text3)}
+textarea[readonly]{color:var(--green)}
+
+.editor-divider{
+  width:1px;background:var(--border);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.arrow-circle{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--surface2);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--text3);
+  position:absolute;z-index:1;
+}
+
+/* ── Convert button ── */
+.btn-convert{
+  width:100%;padding:15px;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:16px;
+  font-size:15px;font-weight:600;font-family:inherit;
+  letter-spacing:-0.01em;
+  cursor:pointer;
+  transition:background 0.15s,transform 0.1s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-convert:hover{background:#7B6FF0}
+.btn-convert:active{transform:scale(0.99)}
+
+/* ── Actions row ── */
+.actions{display:flex;gap:10px;margin-top:12px}
+.btn-secondary{
+  flex:1;padding:11px;
+  background:var(--surface);color:var(--text2);
+  border:1px solid var(--border);border-radius:16px;
+  font-size:13px;font-weight:500;font-family:inherit;
+  cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-secondary:hover{border-color:var(--border2);color:var(--text)}
+
+/* ── Shortcut ── */
+.shortcut-row{text-align:center;margin-top:10px;font-size:12px;color:var(--text3)}
+
+/* ── Features ── */
+.features{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  margin-top:48px;
+}
+.feature{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:18px 16px;
+}
+.feature-icon{font-size:22px;margin-bottom:10px}
+.feature-title{font-size:13px;font-weight:600;margin-bottom:5px}
+.feature-desc{font-size:12px;color:var(--text2);line-height:1.55}
+
+/* ── Footer ── */
+footer{
+  text-align:center;font-size:12px;color:var(--text3);
+  padding:24px;border-top:1px solid var(--border);
+}
+
+/* ── Responsive ── */
+@media(max-width:560px){
+  header{padding:0 16px}
+  main{padding:32px 20px 60px}
+  .hero h1{font-size:26px}
+  .editor{grid-template-columns:1fr;grid-template-rows:1fr auto 1fr}
+  .editor-divider{width:100%;height:1px;flex-direction:row}
+  .arrow-circle{transform:rotate(90deg)}
+  .features{grid-template-columns:1fr}
+  .hkbd{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="wordmark">re<span>key</span></div>
+    <div class="hkbd">Convert: <kbd>Ctrl</kbd>+<kbd>Enter</kbd></div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Fix your text<br><em>in one click</em></h1>
+    <p>Typed with the wrong keyboard? Caps lock ruined everything? Need to write Ukrainian but only have a Latin keyboard? Rekey fixes it instantly.</p>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="keyboard" onclick="setMode('keyboard')">
+      <span>⌨️</span> Wrong keyboard
+    </button>
+    <button class="mode-tab" data-mode="caps" onclick="setMode('caps')">
+      <span>🔠</span> Fix caps
+    </button>
+    <button class="mode-tab" data-mode="translit" onclick="setMode('translit')">
+      <span>🌐</span> Transliterate
+    </button>
+  </div>
+
+  <p class="desc-strip" id="desc">You typed with the wrong keyboard layout active. Pick your language pair below.</p>
+
+  <div class="pairs" id="pairs"></div>
+
+  <div class="editor">
+    <div class="editor-pane">
+      <div class="editor-pane-label">Your text</div>
+      <textarea id="input" placeholder="Paste or type here…" autofocus></textarea>
+    </div>
+    <div class="editor-divider">
+      <div class="arrow-circle">→</div>
+    </div>
+    <div class="editor-pane">
+      <div class="editor-pane-label">Result</div>
+      <textarea id="output" readonly placeholder="Converted text appears here…"></textarea>
+    </div>
+  </div>
+
+  <button class="btn-convert" onclick="convert()">↺ &nbsp;Convert</button>
+
+  <div class="actions">
+    <button class="btn-secondary" onclick="copyOut()">⎘ &nbsp;Copy result</button>
+    <button class="btn-secondary" onclick="swapText()">⇅ &nbsp;Swap</button>
+    <button class="btn-secondary" onclick="clearAll()">✕ &nbsp;Clear</button>
+  </div>
+  <p class="shortcut-row">Or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to convert &nbsp;·&nbsp; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> to copy</p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">⌨️</div>
+      <div class="feature-title">Wrong keyboard</div>
+      <div class="feature-desc">Switch between EN, FR (AZERTY) and Ukrainian layouts in either direction.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔠</div>
+      <div class="feature-title">Fix caps</div>
+      <div class="feature-desc">Repair Caps Lock mistakes, convert to title case or sentence case instantly.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🇺🇦</div>
+      <div class="feature-title">Transliterate</div>
+      <div class="feature-desc">Type Ukrainian phonetically in Latin letters and convert to Cyrillic — or reverse.</div>
+    </div>
+  </div>
+</main>
+
+<footer>Runs entirely in your browser — nothing is stored or sent anywhere.</footer>
+
+<script>
+const MODES={
+  keyboard:{
+    desc:"You typed with the wrong keyboard layout active. Pick your language pair below.",
+    pairs:[
+      {label:"🇬🇧 EN → 🇺🇦 Ukrainian",id:"en_uk"},
+      {label:"🇺🇦 Ukrainian → 🇬🇧 EN",id:"uk_en"},
+      {label:"🇫🇷 FR → 🇺🇦 Ukrainian",id:"fr_uk"},
+      {label:"🇺🇦 Ukrainian → 🇫🇷 FR",id:"uk_fr"},
+      {label:"🇬🇧 EN → 🇫🇷 FR",id:"en_fr"},
+      {label:"🇫🇷 FR → 🇬🇧 EN",id:"fr_en"},
+    ]
+  },
+  caps:{
+    desc:"Fix text typed with Caps Lock on, or change the case of any text.",
+    pairs:[
+      {label:"UPPER → lower",id:"upper_lower"},
+      {label:"lower → UPPER",id:"lower_upper"},
+      {label:"Title Case",id:"title"},
+      {label:"Sentence case",id:"sentence"},
+    ]
+  },
+  translit:{
+    desc:"Type phonetically in Latin and convert to Ukrainian Cyrillic — or romanize in reverse.",
+    pairs:[
+      {label:"Latin → 🇺🇦 Ukrainian",id:"lat_uk"},
+      {label:"🇺🇦 Ukrainian → Latin",id:"uk_lat"},
+      {label:"🇫🇷 French accent fix",id:"fr_accent"},
+    ]
+  }
+};
+
+const UK_TO_EN={'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i','щ':'o','з':'p','х':'[','ї':']','ф':'a','і':'s','в':'d','а':'f','п':'g','р':'h','о':'j','л':'k','д':'l','ж':';','є':"'",'я':'z','ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m',',':'<','.':'>','Й':'Q','Ц':'W','У':'E','К':'R','Е':'T','Н':'Y','Г':'U','Ш':'I','Щ':'O','З':'P','Х':'{','Ї':'}','Ф':'A','І':'S','В':'D','А':'F','П':'G','Р':'H','О':'J','Л':'K','Д':'L','Ж':':','Є':'"','Я':'Z','Ч':'X','С':'C','М':'V','И':'B','Т':'N','Ь':'M'};
+const EN_TO_UK=Object.fromEntries(Object.entries(UK_TO_EN).map(([k,v])=>[v,k]));
+const FR_TO_EN={'a':'q','z':'w','e':'e','r':'r','t':'t','y':'y','u':'u','i':'i','o':'o','p':'p','q':'a','s':'s','d':'d','f':'f','g':'g','h':'h','j':'j','k':'k','l':'l','m':';','w':'z','x':'x','c':'c','v':'v','b':'b','n':'n',',':'m','A':'Q','Z':'W','E':'E','R':'R','T':'T','Y':'Y','U':'U','I':'I','O':'O','P':'P','Q':'A','S':'S','D':'D','F':'F','G':'G','H':'H','J':'J','K':'K','L':'L','M':';','W':'Z','X':'X','C':'C','V':'V','B':'B','N':'N'};
+const EN_TO_FR=Object.fromEntries(Object.entries(FR_TO_EN).map(([k,v])=>[v,k]));
+const FR_TO_UK={};
+Object.entries(FR_TO_EN).forEach(([fr,en])=>{if(EN_TO_UK[en])FR_TO_UK[fr]=EN_TO_UK[en];});
+const UK_TO_FR=Object.fromEntries(Object.entries(FR_TO_UK).map(([k,v])=>[v,k]));
+
+const TRANSLIT_TO_UK=[['shch','щ'],['sch','щ'],['sh','ш'],['ch','ч'],['zh','ж'],['kh','х'],['ts','ц'],['ya','я'],['yu','ю'],['ye','є'],['yi','ї'],['yo','ьо'],['ia','я'],['iu','ю'],['ie','є'],['a','а'],['b','б'],['v','в'],['h','г'],['g','ґ'],['d','д'],['e','е'],['z','з'],['y','и'],['i','і'],['k','к'],['l','л'],['m','м'],['n','н'],['o','о'],['p','п'],['r','р'],['s','с'],['t','т'],['u','у'],['f','ф'],['c','к'],['x','кс'],['q','к'],["'",'ь']];
+const UK_TO_LAT={'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'ye','ж':'zh','з':'z','и':'y','і':'i','ї':'yi','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ь':"'",'ю':'yu','я':'ya','А':'A','Б':'B','В':'V','Г':'H','Ґ':'G','Д':'D','Е':'E','Є':'Ye','Ж':'Zh','З':'Z','И':'Y','І':'I','Ї':'Yi','Й':'I','К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R','С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts','Ч':'Ch','Ш':'Sh','Щ':'Shch','Ь':"'",'Ю':'Yu','Я':'Ya'};
+const FR_ACCENTS=[['/ee','è'],['/^e','ê'],['/^E','Ê'],['/e','é'],['/E','É'],['/^a','â'],['/^A','Â'],['/a','à'],['/A','À'],['/u','ù'],['/U','Ù'],['/c','ç'],['/C','Ç'],['/^u','û'],['/^U','Û'],['/^i','î'],['/^I','Î'],['/^o','ô'],['/^O','Ô']];
+
+function mapChars(t,map){return t.split('').map(c=>map[c]!==undefined?map[c]:c).join('')}
+function translitToUk(text){
+  let out='',i=0;const t=text.toLowerCase();
+  while(i<t.length){let matched=false;
+    for(const[lat,cyr]of TRANSLIT_TO_UK){if(t.startsWith(lat,i)){const up=text[i]===text[i].toUpperCase()&&text[i]!==text[i].toLowerCase();out+=up?cyr[0].toUpperCase()+cyr.slice(1):cyr;i+=lat.length;matched=true;break;}}
+    if(!matched){out+=text[i];i++;}}
+  return out;
+}
+function fixFrAccents(text){let o=text;for(const[c,a]of FR_ACCENTS)o=o.split(c).join(a);return o;}
+function fixCaps(text,id){
+  if(id==='upper_lower')return text.toLowerCase();
+  if(id==='lower_upper')return text.toUpperCase();
+  if(id==='title')return text.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():w).join(' ');
+  if(id==='sentence')return text.charAt(0).toUpperCase()+text.slice(1).toLowerCase();
+  return text;
+}
+
+let mode='keyboard',pairId='en_uk';
+
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  document.getElementById('desc').textContent=MODES[m].desc;
+  renderPairs(m);
+}
+function renderPairs(m){
+  const row=document.getElementById('pairs');row.innerHTML='';
+  MODES[m].pairs.forEach((p,i)=>{
+    const b=document.createElement('button');b.className='pair'+(i===0?' active':'');b.textContent=p.label;
+    b.onclick=()=>{pairId=p.id;document.querySelectorAll('.pair').forEach(x=>x.classList.remove('active'));b.classList.add('active');};
+    row.appendChild(b);
+  });
+  pairId=MODES[m].pairs[0].id;
+}
+function convert(){
+  const input=document.getElementById('input').value;
+  if(!input.trim())return;
+  let result=input;
+  if(mode==='keyboard'){
+    const maps={en_uk:EN_TO_UK,uk_en:UK_TO_EN,fr_uk:FR_TO_UK,uk_fr:UK_TO_FR,en_fr:EN_TO_FR,fr_en:FR_TO_EN};
+    result=mapChars(input,maps[pairId]||{});
+  }else if(mode==='caps'){
+    result=fixCaps(input,pairId);
+  }else if(mode==='translit'){
+    if(pairId==='lat_uk')result=translitToUk(input);
+    else if(pairId==='uk_lat')result=mapChars(input,UK_TO_LAT);
+    else if(pairId==='fr_accent')result=fixFrAccents(input);
+  }
+  document.getElementById('output').value=result;
+}
+function copyOut(){
+  const v=document.getElementById('output').value;if(!v)return;
+  navigator.clipboard.writeText(v).catch(()=>{const o=document.getElementById('output');o.select();document.execCommand('copy');});
+  showToast('Copied!');
+}
+function swapText(){
+  const i=document.getElementById('input'),o=document.getElementById('output');
+  const tmp=i.value;i.value=o.value;o.value=tmp;
+}
+function clearAll(){
+  document.getElementById('input').value='';
+  document.getElementById('output').value='';
+  document.getElementById('input').focus();
+}
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#6C5CE7;color:#fff;padding:8px 20px;border-radius:99px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;pointer-events:none;transition:opacity 0.3s;z-index:999';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',1500);
+}
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();convert();}
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='C'){e.preventDefault();copyOut();}
+});
+renderPairs('keyboard');
+</script>
+</body>
+</html>
